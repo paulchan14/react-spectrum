@@ -184,13 +184,21 @@ export function useColorAreaState(props: ColorAreaProps): ColorAreaState {
     return {xChannel, yChannel, zChannel};
   }, [xChannel, yChannel]);
 
+  const xChannelRange = color.getChannelRange(channels.xChannel);
+  const yChannelRange = color.getChannelRange(channels.yChannel);
+  const {minValue: minValueX, maxValue: maxValueX, step: stepX, pageSize: pageSizeX} = xChannelRange;
+  const {minValue: minValueY, maxValue: maxValueY, step: stepY, pageSize: pageSizeY} = yChannelRange;
+
   if (isNaN(xChannelStep)) {
-    xChannelStep = color.getChannelRange(channels.xChannel).step;
+    xChannelStep = stepX;
   }
 
   if (isNaN(yChannelStep)) {
-    yChannelStep = color.getChannelRange(channels.yChannel).step;
+    yChannelStep = stepY;
   }
+
+  const xChannelPageStep = Math.max(pageSizeX, xChannelStep);
+  const yChannelPageStep = Math.max(pageSizeY, yChannelStep);
 
   let [isDragging, setDragging] = useState(false);
   let isDraggingRef = useRef(false).current;
@@ -198,15 +206,19 @@ export function useColorAreaState(props: ColorAreaProps): ColorAreaState {
   let xValue = color.getChannelValue(channels.xChannel);
   let yValue = color.getChannelValue(channels.yChannel);
   let setXValue = (v: number) => {
+    if (v === xValue) {
+      return;
+    }
     valueRef.current = color.withChannelValue(channels.xChannel, v);
     setColor(valueRef.current);
   };
   let setYValue = (v: number) => {
+    if (v === yValue) {
+      return;
+    }
     valueRef.current = color.withChannelValue(channels.yChannel, v);
     setColor(valueRef.current);
   };
-  let xChannelPageStep = Math.max(color.getChannelRange(channels.xChannel).pageSize, xChannelStep);
-  let yChannelPageStep = Math.max(color.getChannelRange(channels.yChannel).pageSize, yChannelStep);
 
   return {
     channels,
@@ -225,8 +237,6 @@ export function useColorAreaState(props: ColorAreaProps): ColorAreaState {
     yValue,
     setYValue,
     setColorFromPoint(x: number, y: number) {
-      let {minValue: minValueX, maxValue: maxValueX} = color.getChannelRange(channels.xChannel);
-      let {minValue: minValueY, maxValue: maxValueY} = color.getChannelRange(channels.yChannel);
       let newXValue = minValueX + clamp(x, 0, 1) * (maxValueX - minValueX);
       let newYValue = minValueY + (1 - clamp(y, 0, 1)) * (maxValueY - minValueY);
       let newColor:Color;
@@ -245,33 +255,28 @@ export function useColorAreaState(props: ColorAreaProps): ColorAreaState {
       }
     },
     getThumbPosition() {
-      let {minValue: minValueX, maxValue: maxValueX} = color.getChannelRange(channels.xChannel);
-      let {minValue: minValueY, maxValue: maxValueY} = color.getChannelRange(channels.yChannel);
       let x = (xValue - minValueX) / (maxValueX - minValueX);
       let y = 1 - (yValue - minValueY) / (maxValueY - minValueY);
       return {x, y};
     },
     incrementX(stepSize) {
-      let range = color.getChannelRange(channels.xChannel);
-      setXValue(snapValueToStep(xValue + stepSize, range.minValue, range.maxValue, stepSize));
+      setXValue(xValue + stepSize > maxValueX ? maxValueX : snapValueToStep(xValue + stepSize, minValueX, maxValueX, stepSize));
     },
     incrementY(stepSize) {
-      let range = color.getChannelRange(channels.yChannel);
-      setYValue(snapValueToStep(yValue + stepSize, range.minValue, range.maxValue, stepSize));
+      setYValue(yValue + stepSize > maxValueY ? maxValueY : snapValueToStep(yValue + stepSize, minValueY, maxValueY, stepSize));
     },
     decrementX(stepSize) {
-      let range = color.getChannelRange(channels.xChannel);
-      setXValue(snapValueToStep(xValue - stepSize, range.minValue, range.maxValue, stepSize));
+      setXValue(snapValueToStep(xValue - stepSize, minValueX, maxValueX, stepSize));
     },
     decrementY(stepSize) {
-      let range = color.getChannelRange(channels.yChannel);
-      setYValue(snapValueToStep(yValue - stepSize, range.minValue, range.maxValue, stepSize));
+      setYValue(snapValueToStep(yValue - stepSize, minValueY, maxValueY, stepSize));
     },
     setDragging(isDragging) {
       let wasDragging = isDraggingRef;
       isDraggingRef = isDragging;
 
-      if (onChangeEnd && !isDragging && wasDragging) {
+      if (onChangeEnd && !isDragging && wasDragging && 
+        !(xValue === valueRef.current.getChannelValue(channels.xChannel) && yValue === valueRef.current.getChannelValue(channels.yChannel))) {
         onChangeEnd(valueRef.current);
       }
 

@@ -106,26 +106,29 @@ export function useColorArea(props: AriaColorAreaProps, state: ColorAreaState, i
       stateRef.current.setDragging(true);
     },
     onMove({deltaX, deltaY, pointerType, shiftKey}) {
+      const {getThumbPosition, setColorFromPoint, xChannelPageStep, xChannelStep, yChannelPageStep, yChannelStep} = stateRef.current;
       if (currentPosition.current == null) {
-        currentPosition.current = stateRef.current.getThumbPosition();
+        currentPosition.current = getThumbPosition();
       }
       let {width, height} = containerRef.current.getBoundingClientRect();
       if (pointerType === 'keyboard') {
+        const deltaXValue = shiftKey && xChannelPageStep > xChannelStep ? xChannelPageStep : xChannelStep;
+        const deltaYValue = shiftKey && yChannelPageStep > yChannelStep ? yChannelPageStep : yChannelStep;
         if (deltaX > 0) {
-          stateRef.current.incrementX(shiftKey ? stateRef.current.xChannelPageStep : stateRef.current.xChannelStep);
+          stateRef.current[direction === 'rtl' ? 'decrementX' : 'incrementX'](deltaXValue);
         } else if (deltaX < 0) {
-          stateRef.current.decrementX(shiftKey ? stateRef.current.xChannelPageStep : stateRef.current.xChannelStep);
+          stateRef.current[direction === 'rtl' ? 'incrementX' : 'decrementX'](deltaXValue);
         } else if (deltaY > 0) {
-          stateRef.current.decrementY(shiftKey ? stateRef.current.yChannelPageStep : stateRef.current.yChannelStep);
+          stateRef.current.decrementY(deltaYValue);
         } else if (deltaY < 0) {
-          stateRef.current.incrementY(shiftKey ? stateRef.current.yChannelPageStep : stateRef.current.yChannelStep);
+          stateRef.current.incrementY(deltaYValue);
         }
         // set the focused input based on which axis has the greater delta
         focusedInputRef.current = (deltaX !== 0 || deltaY !== 0) && Math.abs(deltaY) > Math.abs(deltaX) ? inputYRef.current : inputXRef.current;
       } else {
         currentPosition.current.x += (direction === 'rtl' ? -1 : 1) * deltaX / width ;
         currentPosition.current.y += deltaY / height;
-        stateRef.current.setColorFromPoint(currentPosition.current.x, currentPosition.current.y);
+        setColorFromPoint(currentPosition.current.x, currentPosition.current.y);
       }
     },
     onMoveEnd() {

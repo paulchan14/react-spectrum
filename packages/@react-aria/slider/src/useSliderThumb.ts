@@ -142,6 +142,8 @@ export function useSliderThumb(
     }
   };
 
+  let inputting = false;
+
   // We install mouse handlers for the drag motion on the thumb div, but
   // not the key handler for moving the thumb with the slider.  Instead,
   // we focus the range input, and let the browser handle the keyboard
@@ -160,8 +162,18 @@ export function useSliderThumb(
       'aria-required': isRequired || undefined,
       'aria-invalid': validationState === 'invalid' || undefined,
       'aria-errormessage': opts['aria-errormessage'],
+      onInput: () => {
+        // On native keyboard input, set thumb dragging so that onChangeEnd will be fired.
+        inputting = true;
+        state.setThumbDragging(index, true);
+      },
       onChange: (e: ChangeEvent<HTMLInputElement>) => {
         state.setThumbValue(index, parseFloat(e.target.value));
+        if (inputting) {
+          // After native keyboard input, unset thumb dragging so that onChangeEnd will be fired.
+          state.setThumbDragging(index, false);
+          inputting = false;
+        }
       }
     }),
     thumbProps: !isDisabled ? mergeProps(

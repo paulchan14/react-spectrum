@@ -10,10 +10,15 @@
  * governing permissions and limitations under the License.
  */
 
+import {action} from '@storybook/addon-actions';
+import {ActionButton} from '@react-spectrum/button';
+import { Flex } from '@react-spectrum/layout';
 import {FocusScope} from '../';
+import {Item, Menu, MenuTrigger} from '@react-spectrum/menu';
 import {Meta, Story} from '@storybook/react';
 import React, {ReactNode, useState} from 'react';
 import ReactDOM from 'react-dom';
+import {Tooltip, TooltipTrigger} from '@react-spectrum/tooltip';
 
 const dialogsRoot = 'dialogsRoot';
 
@@ -34,6 +39,7 @@ const meta: Meta<StoryProps> = {
 export default meta;
 
 const Template = (): Story<StoryProps> => ({usePortal}) => <Example usePortal={usePortal} />;
+const TemplateWithTooltip = (): Story<StoryProps> => () => <ExampleWithTooltip />;
 
 function MaybePortal({children, usePortal}: { children: ReactNode, usePortal: boolean}) {
   if (!usePortal) {
@@ -92,8 +98,48 @@ function Example({usePortal}: StoryProps) {
   );
 }
 
+function ExampleWithTooltip() {
+  let [open, setOpen] = useState(false);
+
+  return (
+    <Flex gap={10}>
+      <MenuTrigger>
+        <ActionButton>Characters</ActionButton>
+        <Menu>
+          <Item>Ulfric the Wise</Item>
+          <Item>Cyrulia of Daggerford</Item>
+          <Item>Gemini of Lothloria</Item>
+          <Item>Madame Felicia</Item>
+        </Menu>
+      </MenuTrigger>
+      <MenuTrigger>
+        <ActionButton>Classes</ActionButton>
+        <Menu>
+          <Item>Paladin</Item>
+          <Item>Warrior</Item>
+          <Item>Sorcerer</Item>
+          <Item>Cleric</Item>
+          <Item>Bard</Item>
+          <Item>Rogue</Item>
+        </Menu>
+      </MenuTrigger>
+      <MenuTrigger>
+        <ActionButton>Loot</ActionButton>
+        <Menu>
+          <Item>Gold Coins (30)</Item>
+          <Item>Cloak of Billowing</Item>
+          <Item>+1 Greatsword</Item>
+          <Item>Wand of Scowels</Item>
+        </Menu>
+      </MenuTrigger>
+    </Flex>
+  );
+}
+
 export const KeyboardNavigation = Template().bind({});
 KeyboardNavigation.args = {usePortal: false};
 
 export const KeyboardNavigationInsidePortal = Template().bind({});
 KeyboardNavigationInsidePortal.args = {usePortal: true};
+      
+export const WithTooltip = TemplateWithTooltip().bind({});
